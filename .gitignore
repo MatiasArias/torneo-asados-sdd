@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporal
+*.log
+*.tmp
+.env
+.env.local
+
+# Node modules (si usas Node.js)
+node_modules/
+npm-debug.log*
+
+# Python (si usas Python)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# Archivos de configuración sensibles
+config.local.*
+secrets.*
+*.key
+*.pem
+
