@@ -2,7 +2,7 @@
 // Run this once after deploying to set up initial users
 
 import { kv } from '@vercel/kv';
-import type { TournamentData } from './lib/types';
+import type { TournamentData } from '../lib/types';
 
 const INITIAL_DATA: TournamentData = {
   users: [

@@ -3,15 +3,20 @@ import AsadoForm from '@/components/AsadoForm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default async function EditarAsadoPage({ params }: { params: { id: string } }) {
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function EditarAsadoPage({ params }: PageProps) {
+  const { id } = await params;
   const data = await getTournamentData();
-  const asado = data.asados.find(a => a.id === params.id);
+  const asado = data.asados.find(a => a.id === id);
   
   if (!asado) {
     notFound();
   }
   
-  const participations = data.participations.filter(p => p.asadoId === params.id);
+  const participations = data.participations.filter(p => p.asadoId === id);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-4 md:p-8">
