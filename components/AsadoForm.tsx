@@ -31,7 +31,8 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   
   // Form state
   const [name, setName] = useState(initialData?.name || '');
-  const [date, setDate] = useState(initialData?.date || '');
+  // Auto-set today's date if creating new asado
+  const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(initialData?.time || '20:00');
   const [location, setLocation] = useState(initialData?.location || '');
   const [hostId, setHostId] = useState(initialData?.hostId || '');
@@ -49,10 +50,14 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
         asistio: false,
         llegoATiempo: false,
         llegoTarde: false,
-        hosteo: false,
+        hosteo: user.id === initialData?.hostId, // Auto-set hosteo based on hostId
         carneEspecial: false,
         compraDividida: false,
       };
+      // Override hosteo for existing participations to match current hostId
+      if (existing) {
+        acc[user.id].hosteo = user.id === initialData?.hostId;
+      }
       return acc;
     }, {} as Record<string, Partial<Participation>>)
   );
@@ -65,6 +70,25 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
         [field]: value,
       },
     }));
+  };
+  
+  // Auto-update hosteo when hostId changes
+  const handleHostChange = (newHostId: string) => {
+    setHostId(newHostId);
+    
+    // Update all participations: set hosteo=true for the host, false for others
+    setParticipations(prev => {
+      const updated = { ...prev };
+      users.forEach(user => {
+        if (updated[user.id]) {
+          updated[user.id] = {
+            ...updated[user.id],
+            hosteo: user.id === newHostId,
+          };
+        }
+      });
+      return updated;
+    });
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -256,7 +280,7 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
           </label>
           <select
             value={hostId}
-            onChange={(e) => setHostId(e.target.value)}
+            onChange={(e) => handleHostChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             required
           >
@@ -300,7 +324,9 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
                 <th className="px-2 py-2 text-center font-medium text-gray-700">Compró</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">A tiempo</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">Tarde</th>
-                <th className="px-2 py-2 text-center font-medium text-gray-700">Hosteó</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700" title="Se asigna automáticamente según el anfitrión">
+                  Hosteó*
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -398,8 +424,9 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
                       <input
                         type="checkbox"
                         checked={p.hosteo || false}
-                        onChange={(e) => updateParticipation(user.id, 'hosteo', e.target.checked)}
-                        className="w-4 h-4"
+                        disabled
+                        className="w-4 h-4 opacity-50 cursor-not-allowed"
+                        title="Se asigna automáticamente según el anfitrión del asado"
                       />
                     </td>
                   </tr>
@@ -410,7 +437,8 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
         </div>
         
         <p className="text-xs text-gray-500 mt-4">
-          * C. Esp. = Carne Especial (bicho/costillar, solo disponible si es asador)
+          * C. Esp. = Carne Especial (bicho/costillar, solo disponible si es asador)<br />
+          * Hosteó se asigna automáticamente según el anfitrión seleccionado
         </p>
       </div>
       
