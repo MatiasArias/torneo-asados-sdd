@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import AsadoForm from '@/components/AsadoForm';
 import AccessCodeModal from '@/components/AccessCodeModal';
@@ -13,7 +13,7 @@ type PageProps = {
 
 export default function EditarAsadoPage({ params }: PageProps) {
   const router = useRouter();
-  const [id, setId] = useState<string>('');
+  const { id } = use(params);
   const [data, setData] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -23,14 +23,8 @@ export default function EditarAsadoPage({ params }: PageProps) {
   const [deleting, setDeleting] = useState(false);
   
   useEffect(() => {
-    params.then(p => setId(p.id));
-  }, [params]);
-  
-  useEffect(() => {
-    if (id) {
-      loadData();
-    }
-  }, [id]);
+    loadData();
+  }, []);
   
   const loadData = async () => {
     try {
@@ -89,7 +83,7 @@ export default function EditarAsadoPage({ params }: PageProps) {
     }
   };
   
-  if (loading || !data || !id) {
+  if (loading || !data) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-4 md:p-8 flex items-center justify-center">
         <div className="text-xl text-gray-600">Cargando...</div>
