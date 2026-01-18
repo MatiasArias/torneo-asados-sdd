@@ -4,6 +4,8 @@ Aplicación web para gestionar torneos de asados entre amigos, con sistema de pu
 
 🌐 **Demo en vivo**: [torneo-asados-sdd.vercel.app](https://torneo-asados-sdd.vercel.app)
 
+> 📐 **Proyecto SDD**: Este proyecto sigue [Specification-Driven Development](./SDD-GUIDE.md) con especificaciones modulares por feature. Ver [`specs/`](./specs/).
+
 ## 📋 Características
 
 - **Gestión de Asados**: Crea y programa asados con fecha, hora, ubicación y anfitrión
@@ -96,9 +98,22 @@ npx tsx scripts/init-data.ts
 
 ## 📚 Documentación
 
-- [SPEC.md](./SPEC.md) - Especificación técnica completa
-- [STATUS.md](./STATUS.md) - Estado del proyecto y roadmap
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Guía de deployment
+### Especificaciones (SDD - Specification-Driven Development)
+
+Este proyecto sigue un enfoque **SDD** con especificaciones modulares por feature:
+
+- **[specs/](./specs/)** - Especificaciones modulares por feature
+  - [00-overview.md](./specs/00-overview.md) - Contexto y stack tecnológico
+  - [01-users.md](./specs/01-users.md) - Gestión de usuarios
+  - [02-asados.md](./specs/02-asados.md) - CRUD de asados
+  - [03-participation.md](./specs/03-participation.md) - Sistema de participación
+  - [04-points.md](./specs/04-points.md) - Cálculo de puntos
+  - [05-penalties.md](./specs/05-penalties.md) - Sistema de penalizaciones
+  - [06-rankings.md](./specs/06-rankings.md) - Rankings y leaderboard
+  - [07-ui-pages.md](./specs/07-ui-pages.md) - Diseño de UI
+  - [08-testing.md](./specs/08-testing.md) - Escenarios de prueba
+
+- **[SPEC.md](./SPEC.md)** - Especificación monolítica original (referencia)
 
 ## 🤝 Contribuir
 
