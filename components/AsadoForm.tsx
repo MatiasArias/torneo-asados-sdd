@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User, Participation } from '@/lib/types';
+import RatingModal from './RatingModal';
 
 interface AsadoFormProps {
   users: User[];
@@ -22,6 +23,11 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Rating modal state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [currentAsadorIndex, setCurrentAsadorIndex] = useState(0);
+  const [asadoresNeedingRating, setAsadoresNeedingRating] = useState<string[]>([]);
   
   // Form state
   const [name, setName] = useState(initialData?.name || '');
@@ -63,27 +69,67 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     
+    // Validate basic fields
+    if (!name || !date || !hostId) {
+      setError('Por favor completa todos los campos obligatorios');
+      return;
+    }
+    
+    // Get asadores that need rating
+    const asadores = Object.entries(participations)
+      .filter(([_, p]) => p.asador)
+      .map(([userId, _]) => userId);
+    
+    // Check if any asador is missing rating
+    const asadoresWithoutRating = asadores.filter(userId => {
+      const rating = participations[userId].calificacionAsado;
+      return !rating || rating < 1 || rating > 5;
+    });
+    
+    // If there are asadores without rating, show modal for the first one
+    if (asadoresWithoutRating.length > 0) {
+      setAsadoresNeedingRating(asadoresWithoutRating);
+      setCurrentAsadorIndex(0);
+      setShowRatingModal(true);
+      return;
+    }
+    
+    // All ratings are complete, proceed to save
+    await saveAsado();
+  };
+  
+  const handleRatingSubmit = (rating: number) => {
+    const userId = asadoresNeedingRating[currentAsadorIndex];
+    updateParticipation(userId, 'calificacionAsado', rating);
+    
+    // Check if there are more asadores to rate
+    if (currentAsadorIndex < asadoresNeedingRating.length - 1) {
+      setCurrentAsadorIndex(currentAsadorIndex + 1);
+    } else {
+      // All ratings complete, close modal and save
+      setShowRatingModal(false);
+      setAsadoresNeedingRating([]);
+      setCurrentAsadorIndex(0);
+      
+      // Save asado after modal closes
+      setTimeout(() => {
+        saveAsado();
+      }, 100);
+    }
+  };
+  
+  const handleRatingCancel = () => {
+    setShowRatingModal(false);
+    setAsadoresNeedingRating([]);
+    setCurrentAsadorIndex(0);
+  };
+  
+  const saveAsado = async () => {
+    setLoading(true);
+    
     try {
-      // Validate
-      if (!name || !date || !hostId) {
-        setError('Por favor completa todos los campos obligatorios');
-        setLoading(false);
-        return;
-      }
-      
-      // Check asador has rating
-      const asadores = Object.values(participations).filter(p => p.asador);
-      for (const asador of asadores) {
-        if (!asador.calificacionAsado || asador.calificacionAsado < 1 || asador.calificacionAsado > 5) {
-          setError('Los asadores deben tener una calificación de 1 a 5');
-          setLoading(false);
-          return;
-        }
-      }
-      
       const asadoData = {
         name,
         date,
@@ -123,8 +169,23 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   
   const attendees = Object.values(participations).filter(p => p.asistio).length;
   
+  const currentRatingUser = asadoresNeedingRating[currentAsadorIndex] 
+    ? users.find(u => u.id === asadoresNeedingRating[currentAsadorIndex])
+    : null;
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      {/* Rating Modal */}
+      {showRatingModal && currentRatingUser && (
+        <RatingModal
+          userName={currentRatingUser.name}
+          initialRating={participations[currentRatingUser.id].calificacionAsado}
+          onSubmit={handleRatingSubmit}
+          onCancel={handleRatingCancel}
+        />
+      )}
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
@@ -234,7 +295,7 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
                 <th className="px-2 py-2 text-left font-medium text-gray-700">Nombre</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">Asistió</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">Asador</th>
-                <th className="px-2 py-2 text-center font-medium text-gray-700">★ (1-5)</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Calificación</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">C. Esp.</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">Compró</th>
                 <th className="px-2 py-2 text-center font-medium text-gray-700">A tiempo</th>
@@ -264,17 +325,35 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
                         className="w-4 h-4"
                       />
                     </td>
-                    <td className="px-2 py-2 text-center">
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        value={p.calificacionAsado || ''}
-                        onChange={(e) => updateParticipation(user.id, 'calificacionAsado', e.target.value ? parseInt(e.target.value) : undefined)}
-                        disabled={!p.asador}
-                        className="w-12 px-1 py-1 border rounded text-center disabled:bg-gray-100"
-                        placeholder="-"
-                      />
+                    <td className="px-2 py-2">
+                      <div className="flex items-center justify-center gap-1">
+                        {p.asador ? (
+                          <>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => updateParticipation(user.id, 'calificacionAsado', star)}
+                                className="focus:outline-none hover:scale-110 transition-transform"
+                              >
+                                <svg
+                                  className={`w-5 h-5 ${
+                                    star <= (p.calificacionAsado || 0)
+                                      ? 'fill-orange-500 text-orange-500'
+                                      : 'fill-gray-300 text-gray-300'
+                                  }`}
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                              </button>
+                            ))}
+                          </>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-2 py-2 text-center">
                       <input
@@ -354,6 +433,7 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
         </button>
       </div>
     </form>
+    </>
   );
 }
 

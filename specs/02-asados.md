@@ -146,7 +146,7 @@ interface Asado {
 
 **Fields:**
 - Name (text input, required)
-- Date (date picker, required)
+- Date (auto, suggested as today, but editable with date picker, required)
 - Time (time picker, required)
 - Location (text input, required)
 - Host (dropdown, required)
