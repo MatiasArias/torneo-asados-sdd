@@ -4,6 +4,19 @@ import { calculateAllPoints } from '@/lib/points';
 import type { Asado, Participation } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
+export async function GET() {
+  try {
+    const data = await getTournamentData();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error getting tournament data:', error);
+    return NextResponse.json(
+      { error: 'Failed to get tournament data' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
