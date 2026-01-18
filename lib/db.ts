@@ -1,8 +1,27 @@
-// Database access functions for Vercel KV
-import { kv } from '@vercel/kv';
+// Database access functions for Redis
+import { createClient } from 'redis';
 import type { TournamentData } from './types';
 
 const TOURNAMENT_KEY = 'torneo_2025';
+
+// Create Redis client
+let redisClient: ReturnType<typeof createClient> | null = null;
+
+async function getRedisClient() {
+  if (!redisClient) {
+    redisClient = createClient({
+      url: process.env.REDIS_URL || '',
+    });
+    
+    redisClient.on('error', (err) => console.error('Redis Client Error', err));
+    
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+    }
+  }
+  
+  return redisClient;
+}
 
 // Initial data structure
 const INITIAL_DATA: TournamentData = {
@@ -24,15 +43,16 @@ const INITIAL_DATA: TournamentData = {
 
 export async function getTournamentData(): Promise<TournamentData> {
   try {
-    const data = await kv.get<TournamentData>(TOURNAMENT_KEY);
+    const client = await getRedisClient();
+    const data = await client.get(TOURNAMENT_KEY);
     
     // If no data exists, initialize with default data
     if (!data) {
-      await kv.set(TOURNAMENT_KEY, INITIAL_DATA);
+      await client.set(TOURNAMENT_KEY, JSON.stringify(INITIAL_DATA));
       return INITIAL_DATA;
     }
     
-    return data;
+    return JSON.parse(data) as TournamentData;
   } catch (error) {
     console.error('Error fetching tournament data:', error);
     // Return initial data as fallback
@@ -42,7 +62,8 @@ export async function getTournamentData(): Promise<TournamentData> {
 
 export async function saveTournamentData(data: TournamentData): Promise<void> {
   try {
-    await kv.set(TOURNAMENT_KEY, data);
+    const client = await getRedisClient();
+    await client.set(TOURNAMENT_KEY, JSON.stringify(data));
   } catch (error) {
     console.error('Error saving tournament data:', error);
     throw error;
