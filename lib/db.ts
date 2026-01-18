@@ -1,23 +1,17 @@
 // Database access functions for Redis
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import type { TournamentData } from './types';
 
 const TOURNAMENT_KEY = 'torneo_2025';
 
 // Create Redis client
-let redisClient: ReturnType<typeof createClient> | null = null;
+let redisClient: Redis | null = null;
 
 async function getRedisClient() {
   if (!redisClient) {
-    redisClient = createClient({
-      url: process.env.REDIS_URL || '',
-    });
+    redisClient = new Redis(process.env.REDIS_URL || '');
     
     redisClient.on('error', (err) => console.error('Redis Client Error', err));
-    
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
-    }
   }
   
   return redisClient;

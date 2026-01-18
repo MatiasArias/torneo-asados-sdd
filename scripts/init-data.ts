@@ -1,7 +1,7 @@
 // Script to initialize tournament data in Redis
 // Run this once after deploying to set up initial users
 
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import type { TournamentData } from '../lib/types';
 
 const INITIAL_DATA: TournamentData = {
@@ -21,13 +21,10 @@ const INITIAL_DATA: TournamentData = {
 };
 
 async function initializeData() {
-  const client = createClient({
-    url: process.env.REDIS_URL || '',
-  });
+  const client = new Redis(process.env.REDIS_URL || '');
 
   try {
     console.log('Connecting to Redis...');
-    await client.connect();
     
     console.log('Initializing tournament data...');
     await client.set('torneo_2025', JSON.stringify(INITIAL_DATA));
@@ -35,10 +32,10 @@ async function initializeData() {
     console.log('✅ Data initialized successfully!');
     console.log('Users created:', INITIAL_DATA.users.map(u => u.name).join(', '));
     
-    await client.disconnect();
+    await client.quit();
   } catch (error) {
     console.error('❌ Error initializing data:', error);
-    await client.disconnect();
+    await client.quit();
     process.exit(1);
   }
 }
