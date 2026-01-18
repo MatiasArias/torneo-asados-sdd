@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTournamentData, saveTournamentData } from '@/lib/db';
+import { calculateAllPoints } from '@/lib/points';
 import type { Penalty } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
     
     data.penalties.push(newPenalty);
     
+    // Note: Penalties don't affect participation points calculation
+    // They are subtracted separately in rankings
     await saveTournamentData(data);
     
     return NextResponse.json({ success: true, penalty: newPenalty });
@@ -57,6 +60,8 @@ export async function DELETE(request: NextRequest) {
     const data = await getTournamentData();
     data.penalties = data.penalties.filter(p => p.id !== id);
     
+    // Note: Penalties don't affect participation points calculation
+    // They are subtracted separately in rankings, so no recalculation needed
     await saveTournamentData(data);
     
     return NextResponse.json({ success: true });

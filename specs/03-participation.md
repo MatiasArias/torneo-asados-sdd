@@ -26,7 +26,7 @@ Tracks who participated in each asado and what roles they performed. Each user c
 - **Asistió**: Whether user attended (boolean)
 - **Llegó a Tiempo**: Arrived within 10 min of start time (boolean)
 - **Llegó Tarde**: Arrived 10-60 min late (boolean)
-- **Hosteo**: Whether user hosted (boolean)
+- **Hosteo**: Se determina automáticamente a partir del campo "Host" del asado (no editable, se asigna según el asado seleccionado)
 - **Carne Especial**: Grilled special cuts (bicho/costillar) (boolean)
 - **Points**: Calculated points for this participation (number)
 
@@ -85,6 +85,8 @@ interface Participation {
 2. **Asador Rules**:
    - Can have multiple asadores per asado (rare but allowed)
    - If asador = true, calificacionAsado is REQUIRED (1-5)
+   - Rating must be provided via modal before saving asado
+   - Modal appears automatically on save if rating is missing
    - Rating decided by group after asado completes
    - Carne especial is bonus on top of asador points
 
@@ -173,7 +175,13 @@ For each of 8 users, show row with:
 - Points: Live preview, calculated as user makes changes
 
 **Interactions:**
-- Check "Asador" → Rating field becomes required
+- Check "Asador" → Star rating becomes available in table (clickable)
+- On save → Modal appears for each asador without rating
+  - Modal shows user name and 5 interactive stars
+  - Stars display hover effect and descriptive text (Malo, Regular, Bueno, Muy Bueno, Excelente)
+  - User must rate before modal closes
+  - If multiple asadores, modal appears sequentially for each
+  - Only after all asadores are rated, asado is saved
 - Check "Comprador" → System counts total compradores
   - If 1 comprador: compraDividida = false
   - If 2+ compradores: compraDividida = true for all
@@ -197,7 +205,7 @@ For each of 8 users, show row with:
 **A:** Not possible - radio buttons enforce mutual exclusion
 
 ### Q: Rating without being asador?
-**A:** Not allowed - rating field disabled unless asador checked
+**A:** Not allowed - rating stars only appear if asador is checked. On save, modal only appears for marked asadores.
 
 ### Q: Only 3 people attend?
 **A:** Warning shown, asado can be saved, but everyone gets 0 points
@@ -208,14 +216,29 @@ For each of 8 users, show row with:
 - `lib/types.ts` - Participation type
 - `lib/points.ts` - Points calculation logic
 - `components/AsadoForm.tsx` - Participation table UI
+- `components/RatingModal.tsx` - Star rating modal component
 - `app/api/asados/[id]/route.ts` - Save participations with asado
+
+### Rating Modal Flow
+1. User fills asado form and marks asadores
+2. User clicks "Guardar" or "Actualizar Asado"
+3. System checks for asadores without rating (calificacionAsado)
+4. If found, modal appears with:
+   - Asador's name
+   - 5 interactive stars with hover effects
+   - Descriptive text (Malo, Regular, Bueno, Muy Bueno, Excelente)
+   - Confirm/Cancel buttons
+5. User rates asador (1-5 stars)
+6. If multiple asadores, modal appears for next asador
+7. After all ratings complete, asado is saved automatically
 
 ### Points Calculation Flow
 1. User checks/unchecks participation options
 2. Live preview calculates points per user
 3. Validates minimum attendees (4)
-4. On save, calculates final points
-5. Stores points in participation record
+4. On save, validates all asadores have ratings via modal
+5. Calculates final points
+6. Stores points in participation record
 
 ### Compra Dividida Auto-Logic
 ```typescript
@@ -231,10 +254,14 @@ compradores.forEach(p => {
 ## Test Scenarios
 
 ### ✅ Role Assignment
-1. Mark user as asador → Rating becomes required
-2. Save without rating → Validation error
-3. Mark 3 users as compradores → All get compraDividida = true
-4. Mark 1 user as comprador → compraDividida = false
+1. Mark user as asador → Star rating becomes available in table
+2. Click stars in table → Rating updates visually
+3. Save without rating → Modal appears automatically
+4. Rate in modal → Asado saves successfully
+5. Multiple asadores → Modal appears sequentially for each
+6. Cancel modal → Returns to form without saving
+7. Mark 3 users as compradores → All get compraDividida = true
+8. Mark 1 user as comprador → compraDividida = false
 
 ### ✅ Arrival Times
 1. Mark "A tiempo" → "Tarde" disabled
@@ -261,6 +288,9 @@ compradores.forEach(p => {
 - [x] Participation table UI component
 - [x] Live points preview
 - [x] Asador → Rating validation
+- [x] Star rating modal component (RatingModal.tsx)
+- [x] Interactive star rating in table
+- [x] Sequential modal flow for multiple asadores
 - [x] Compra dividida auto-calculation
 - [x] Arrival time radio buttons
 - [x] Minimum attendees warning

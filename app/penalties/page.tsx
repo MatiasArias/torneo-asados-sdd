@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Penalty, User } from '@/lib/types';
+import AccessCodeModal from '@/components/AccessCodeModal';
 
 export default function PenaltiesPage() {
   const router = useRouter();
@@ -11,6 +12,12 @@ export default function PenaltiesPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  
+  // Access code modal state
+  const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
+  const [isAccessGranted, setIsAccessGranted] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'create' | 'delete' | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   
   // Form state
   const [userId, setUserId] = useState('');
@@ -44,6 +51,14 @@ export default function PenaltiesPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check access code first
+    if (!isAccessGranted) {
+      setPendingAction('create');
+      setShowAccessCodeModal(true);
+      return;
+    }
+    
     setSubmitting(true);
     
     try {
@@ -69,6 +84,7 @@ export default function PenaltiesPage() {
       setPoints('');
       setReason('');
       setShowForm(false);
+      setIsAccessGranted(false); // Reset access for next time
       
       // Reload data
       await loadData();
@@ -81,11 +97,34 @@ export default function PenaltiesPage() {
     }
   };
   
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Seguro que quieres eliminar este penalty?')) {
-      return;
-    }
+  const handleAccessCodeSuccess = () => {
+    setShowAccessCodeModal(false);
+    setIsAccessGranted(true);
     
+    // Execute pending action
+    if (pendingAction === 'create') {
+      setPendingAction(null);
+      setTimeout(() => {
+        const form = document.querySelector('form');
+        if (form) {
+          form.requestSubmit();
+        }
+      }, 100);
+    } else if (pendingAction === 'delete' && pendingDeleteId) {
+      setPendingAction(null);
+      const idToDelete = pendingDeleteId;
+      setPendingDeleteId(null);
+      executeDelete(idToDelete);
+    }
+  };
+  
+  const handleAccessCodeCancel = () => {
+    setShowAccessCodeModal(false);
+    setPendingAction(null);
+    setPendingDeleteId(null);
+  };
+  
+  const executeDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/penalties?id=${id}`, {
         method: 'DELETE',
@@ -95,12 +134,29 @@ export default function PenaltiesPage() {
         throw new Error('Error al eliminar penalty');
       }
       
+      setIsAccessGranted(false); // Reset access for next time
       await loadData();
       router.refresh();
     } catch (error) {
       console.error('Error deleting penalty:', error);
       alert('Error al eliminar penalty');
     }
+  };
+  
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Seguro que quieres eliminar este penalty?')) {
+      return;
+    }
+    
+    // Check access code first
+    if (!isAccessGranted) {
+      setPendingAction('delete');
+      setPendingDeleteId(id);
+      setShowAccessCodeModal(true);
+      return;
+    }
+    
+    await executeDelete(id);
   };
   
   if (loading) {
@@ -113,6 +169,15 @@ export default function PenaltiesPage() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-4 md:p-8">
+      {/* Access Code Modal */}
+      {showAccessCodeModal && (
+        <AccessCodeModal
+          actionName={pendingAction === 'create' ? 'crear la penalización' : 'eliminar la penalización'}
+          onSuccess={handleAccessCodeSuccess}
+          onCancel={handleAccessCodeCancel}
+        />
+      )}
+      
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link href="/" className="text-orange-600 hover:text-orange-700 font-medium">

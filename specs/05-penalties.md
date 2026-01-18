@@ -85,9 +85,11 @@ interface Penalty {
 - **Cumulative**: All penalties add up (subtract from total)
 
 ### 2. Creation
+- **Access Code Protected**: Creating penalties requires validation code (20182024)
+- Code is requested via modal before saving
 - **Manual only**: No automatic penalty creation in MVP
-- **Trust-based**: Anyone can create penalty for anyone
-- **No approval**: Immediate effect on rankings
+- **No approval**: Immediate effect on rankings after code validation
+- **No recalculation needed**: Penalties are calculated separately in rankings (not part of participation points)
 
 ### 3. Asado Linking
 - **Optional**: Can link to specific asado or leave null
@@ -253,16 +255,41 @@ Penalties appear in rankings table:
 **A:** Delete it. No edit/undo system in MVP.
 
 ### Q: Who decides penalties?
-**A:** Group consensus. Trust-based, anyone can enter but friends decide together.
+**A:** Owner-controlled. Access code (20182024) required to create or delete penalties.
 
 ## Implementation Details
 
 ### Files
 - `lib/types.ts` - Penalty type definition
 - `lib/db.ts` - Penalty CRUD operations
-- `app/api/penalties/route.ts` - List & Create endpoints
-- `app/penalties/page.tsx` - Penalties list page
-- Components: PenaltyForm, PenaltyList
+- `app/api/penalties/route.ts` - List, Create & Delete endpoints
+- `app/penalties/page.tsx` - Penalties management page (with access code validation)
+- `components/AccessCodeModal.tsx` - Access code validation modal
+
+### Access Code Flow for Penalties
+
+**Creating Penalty:**
+1. User fills penalty form (user, points, reason)
+2. User clicks "Agregar Penalty"
+3. System checks if access granted
+4. If not, modal appears requesting code
+5. User enters code (20182024)
+6. If correct: penalty created, access resets
+7. If incorrect: error shown, input cleared
+
+**Deleting Penalty:**
+1. User clicks "Eliminar" on penalty
+2. Browser confirms "¿Seguro?"
+3. If confirmed, system checks access
+4. If not granted, modal appears
+5. User enters code (20182024)
+6. If correct: penalty deleted, rankings update automatically, access resets
+7. If incorrect: error shown, penalty preserved
+
+**Important Notes:**
+- Penalties don't trigger participation points recalculation
+- Rankings calculate penalties in real-time (not stored)
+- Total points = participation points + penalty points
 
 ### Database Operations
 
