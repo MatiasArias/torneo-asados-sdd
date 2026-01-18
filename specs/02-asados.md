@@ -28,13 +28,13 @@ Core feature for creating, editing, and managing asado events. Each asado repres
 ### Capabilities
 - ✅ Create new asado
 - ✅ Edit existing asado
-- ✅ Delete asado
+- ✅ Delete asado (with access code validation)
 - ✅ View asado details
 - ✅ List all asados
 
 ### Permissions
-- **Access Code Protected**: Creating and editing asados requires a validation code (20182024)
-- Code is requested via modal before saving
+- **Access Code Protected**: Creating, editing, and deleting asados requires a validation code (20182024)
+- Code is requested via modal before saving or deleting
 - Trust-based after authentication
 
 ## Data Model
@@ -140,9 +140,12 @@ interface Asado {
 
 4. **Edit Anytime**: Past asados can be edited (after code validation)
 
-5. **Delete Cascade**: When asado is deleted:
+5. **Delete Cascade**: When asado is deleted (requires access code):
+   - Requires browser confirmation dialog
+   - Requires access code validation
    - Delete all participations for that asado
    - Keep penalties linked to asado but mark asado as deleted
+   - Redirects to home page after successful deletion
 
 6. **Date Format**: Always store as YYYY-MM-DD for consistency
 
@@ -161,9 +164,12 @@ interface Asado {
 - Notes (textarea, optional)
 
 **Actions:**
-- Save button
+- Save button (requires access code)
 - Cancel button (returns to list)
-- Delete button (only on edit mode)
+- Delete button (top right, only on edit mode, requires access code)
+  - Red button with trash icon
+  - Requires confirmation dialog + access code
+  - Located next to "← Volver al inicio" link
 
 ### List View
 - Show upcoming asados first
@@ -207,6 +213,8 @@ interface Asado {
 - `components/AccessCodeModal.tsx` - Access code validation modal
 
 ### Access Code Flow
+
+**For Creating/Editing:**
 1. User fills asado form completely
 2. User clicks "Crear Asado" or "Actualizar Asado"
 3. System checks if access has been granted in this session
@@ -223,14 +231,38 @@ interface Asado {
    - Input clears
    - User can retry or cancel
 
+**For Deleting:**
+1. User clicks trash icon button (top right of edit page)
+2. Browser confirmation dialog appears: "¿Estás seguro que quieres eliminar este asado?"
+3. If user confirms:
+   - System checks if access granted
+   - If not, modal appears requesting code
+   - User enters code (20182024)
+4. If correct:
+   - Asado deleted
+   - All participations deleted
+   - Redirects to home page
+   - Access resets
+5. If incorrect:
+   - Error message displayed
+   - Modal shakes
+   - Asado preserved
+
 ## Test Scenarios
 
 ### ✅ CRUD Operations
-1. Create asado with all fields → Success
-2. Create asado with optional notes empty → Success
-3. Edit asado → Updates correctly
-4. Delete asado → Removes asado and participations
+1. Create asado with all fields → Requires code → Success
+2. Create asado with optional notes empty → Requires code → Success
+3. Edit asado → Requires code → Updates correctly
+4. Delete asado via trash button → Confirmation + code → Removes asado and participations
 5. List asados → Returns all asados sorted by date
+
+### ✅ Access Code Validation
+1. Attempt to create without code → Modal appears
+2. Enter wrong code → Error, shake animation, retry
+3. Enter correct code → Asado created
+4. Attempt to delete without code → Modal appears after confirmation
+5. Access resets after each operation
 
 ### ✅ Validation
 1. Submit without required field → Error
