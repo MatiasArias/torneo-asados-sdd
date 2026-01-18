@@ -144,6 +144,7 @@ interface Asado {
    - Requires browser confirmation dialog
    - Requires access code validation
    - Delete all participations for that asado
+   - **Recalculate all points** for all users (critical for rankings)
    - Keep penalties linked to asado but mark asado as deleted
    - Redirects to home page after successful deletion
 

@@ -89,6 +89,7 @@ interface Penalty {
 - Code is requested via modal before saving
 - **Manual only**: No automatic penalty creation in MVP
 - **No approval**: Immediate effect on rankings after code validation
+- **No recalculation needed**: Penalties are calculated separately in rankings (not part of participation points)
 
 ### 3. Asado Linking
 - **Optional**: Can link to specific asado or leave null
@@ -282,8 +283,13 @@ Penalties appear in rankings table:
 3. If confirmed, system checks access
 4. If not granted, modal appears
 5. User enters code (20182024)
-6. If correct: penalty deleted, access resets
+6. If correct: penalty deleted, rankings update automatically, access resets
 7. If incorrect: error shown, penalty preserved
+
+**Important Notes:**
+- Penalties don't trigger participation points recalculation
+- Rankings calculate penalties in real-time (not stored)
+- Total points = participation points + penalty points
 
 ### Database Operations
 

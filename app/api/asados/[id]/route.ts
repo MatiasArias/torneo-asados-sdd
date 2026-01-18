@@ -88,7 +88,10 @@ export async function DELETE(
     data.asados = data.asados.filter(a => a.id !== id);
     data.participations = data.participations.filter(p => p.asadoId !== id);
     
-    await saveTournamentData(data);
+    // Recalculate all points after deletion
+    const updatedData = calculateAllPoints(data);
+    
+    await saveTournamentData(updatedData);
     
     return NextResponse.json({ success: true });
   } catch (error) {
