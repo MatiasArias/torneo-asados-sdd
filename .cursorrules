@@ -1,5 +1,27 @@
 # Cursor Rules - Torneo de Asados
 
+## Documentación y Especificaciones
+
+### 📝 SIEMPRE actualizar las especificaciones
+- **OBLIGATORIO**: Cada cambio de funcionalidad o comportamiento DEBE reflejarse en los archivos de especificaciones
+- **Archivos de specs**: Están ubicados en la carpeta `/specs/`
+- **Proceso**:
+  1. Implementar el cambio solicitado en el código
+  2. Actualizar inmediatamente las especificaciones relevantes
+  3. Verificar que la documentación sea consistente con la implementación
+
+### Archivos de Especificación:
+- `specs/01-users.md` - Gestión de usuarios
+- `specs/02-asados.md` - Gestión de asados
+- `specs/03-participation.md` - Participación y roles
+- `specs/04-points.md` - Sistema de puntos
+- `specs/05-penalties.md` - Penalizaciones
+- `specs/06-rankings.md` - Rankings y estadísticas
+- `specs/07-ui-pages.md` - Páginas y UI
+- `SPEC.md` - Especificación general del proyecto
+
+**Razón:** Las especificaciones son la fuente de verdad del proyecto. Mantenerlas actualizadas asegura que el código y la documentación estén siempre sincronizados.
+
 ## Git y Control de Versiones
 
 ### ⛔ NUNCA hacer commits ni push automáticamente
@@ -18,17 +40,17 @@
 ## Workflow recomendado
 
 Cuando termines cambios:
-1. Informar al usuario qué archivos fueron modificados
+1. Informar al usuario qué archivos fueron modificados (código Y especificaciones)
 2. Sugerir comandos de Git que el usuario puede ejecutar manualmente
 3. Ejemplo:
    ```
    Se modificaron los siguientes archivos:
-   - package.json
-   - app/globals.css
+   - components/AsadoForm.tsx
+   - specs/03-participation.md
    
    Para hacer commit y push, puedes ejecutar:
    git add -A
-   git commit -m "tu mensaje"
+   git commit -m "feat: implementar calificación con modal de estrellas"
    git push origin tu-branch
    ```
 
@@ -40,6 +62,7 @@ Cuando termines cambios:
 - Ejecutar el servidor de desarrollo con `npm run dev`
 - Leer y modificar archivos del proyecto
 - Crear, editar y eliminar archivos de código
+- **Actualizar archivos de especificaciones en `/specs/`**
 
 ### ℹ️ Notas
 - Este proyecto usa Next.js 15 con App Router
