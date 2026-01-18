@@ -1,17 +1,35 @@
-// Database access functions for Redis
+// Database access functions - supports Redis or in-memory storage
 import Redis from 'ioredis';
 import type { TournamentData } from './types';
 
 const TOURNAMENT_KEY = 'torneo_2025';
 
-// Create Redis client
+// Create Redis client (only if REDIS_URL is provided)
 let redisClient: Redis | null = null;
+let useRedis = false;
+let inMemoryData: TournamentData | null = null;
 
 async function getRedisClient() {
-  if (!redisClient) {
-    redisClient = new Redis(process.env.REDIS_URL || '');
-    
-    redisClient.on('error', (err) => console.error('Redis Client Error', err));
+  // Only try to use Redis if REDIS_URL is explicitly set
+  if (process.env.REDIS_URL && !redisClient && !useRedis) {
+    try {
+      redisClient = new Redis(process.env.REDIS_URL);
+      
+      // Test connection
+      await redisClient.ping();
+      useRedis = true;
+      console.log('✓ Connected to Redis');
+      
+      redisClient.on('error', (err) => {
+        console.error('Redis Client Error', err);
+        useRedis = false;
+        redisClient = null;
+      });
+    } catch (error) {
+      console.log('⚠ Redis not available, using in-memory storage');
+      useRedis = false;
+      redisClient = null;
+    }
   }
   
   return redisClient;
@@ -38,29 +56,49 @@ const INITIAL_DATA: TournamentData = {
 export async function getTournamentData(): Promise<TournamentData> {
   try {
     const client = await getRedisClient();
-    const data = await client.get(TOURNAMENT_KEY);
     
-    // If no data exists, initialize with default data
-    if (!data) {
-      await client.set(TOURNAMENT_KEY, JSON.stringify(INITIAL_DATA));
-      return INITIAL_DATA;
+    // Use Redis if available
+    if (client && useRedis) {
+      const data = await client.get(TOURNAMENT_KEY);
+      
+      if (!data) {
+        await client.set(TOURNAMENT_KEY, JSON.stringify(INITIAL_DATA));
+        return INITIAL_DATA;
+      }
+      
+      return JSON.parse(data) as TournamentData;
     }
     
-    return JSON.parse(data) as TournamentData;
+    // Fallback to in-memory storage
+    if (!inMemoryData) {
+      inMemoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
+    }
+    return JSON.parse(JSON.stringify(inMemoryData));
   } catch (error) {
     console.error('Error fetching tournament data:', error);
     // Return initial data as fallback
-    return INITIAL_DATA;
+    if (!inMemoryData) {
+      inMemoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
+    }
+    return JSON.parse(JSON.stringify(inMemoryData));
   }
 }
 
 export async function saveTournamentData(data: TournamentData): Promise<void> {
   try {
     const client = await getRedisClient();
-    await client.set(TOURNAMENT_KEY, JSON.stringify(data));
+    
+    // Use Redis if available
+    if (client && useRedis) {
+      await client.set(TOURNAMENT_KEY, JSON.stringify(data));
+    } else {
+      // Save to in-memory storage
+      inMemoryData = JSON.parse(JSON.stringify(data));
+    }
   } catch (error) {
     console.error('Error saving tournament data:', error);
-    throw error;
+    // Fallback to in-memory
+    inMemoryData = JSON.parse(JSON.stringify(data));
   }
 }
 
