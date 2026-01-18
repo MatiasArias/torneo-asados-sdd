@@ -1,8 +1,8 @@
-// Script to initialize tournament data in Vercel KV
+// Script to initialize tournament data in Redis
 // Run this once after deploying to set up initial users
 
-import { kv } from '@vercel/kv';
-import type { TournamentData } from './lib/types';
+import Redis from 'ioredis';
+import type { TournamentData } from '../lib/types';
 
 const INITIAL_DATA: TournamentData = {
   users: [
@@ -21,13 +21,21 @@ const INITIAL_DATA: TournamentData = {
 };
 
 async function initializeData() {
+  const client = new Redis(process.env.REDIS_URL || '');
+
   try {
+    console.log('Connecting to Redis...');
+    
     console.log('Initializing tournament data...');
-    await kv.set('torneo_2025', INITIAL_DATA);
+    await client.set('torneo_2025', JSON.stringify(INITIAL_DATA));
+    
     console.log('✅ Data initialized successfully!');
     console.log('Users created:', INITIAL_DATA.users.map(u => u.name).join(', '));
+    
+    await client.quit();
   } catch (error) {
     console.error('❌ Error initializing data:', error);
+    await client.quit();
     process.exit(1);
   }
 }

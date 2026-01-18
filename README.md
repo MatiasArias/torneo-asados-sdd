@@ -1,84 +1,114 @@
 # 🥩 Torneo de Asados
 
-Repositorio personal para el proyecto "Torneo de Asados".
+Aplicación web para gestionar torneos de asados entre amigos, con sistema de puntos, rankings y penalizaciones.
 
-## 🔧 Configuración inicial de Git
+🌐 **Demo en vivo**: [torneo-asados-sdd.vercel.app](https://torneo-asados-sdd.vercel.app)
 
-Este repositorio está configurado para usar tus credenciales **personales** de GitHub, completamente separadas de las del trabajo.
+## 📋 Características
 
-### Configuración rápida
+- **Gestión de Asados**: Crea y programa asados con fecha, hora, ubicación y anfitrión
+- **Sistema de Participación**: Registra quién asiste y quién falta a cada asado
+- **Puntos Automáticos**: 
+  - +10 puntos por asistir
+  - +5 puntos adicionales por ser el anfitrión
+  - +5 puntos de cumpleaños si es tu cumpleaños
+- **Penalizaciones**: Sistema para gestionar faltas y sus castigos
+- **Rankings en Tiempo Real**: Tabla de posiciones actualizada automáticamente
+- **Responsive Design**: Funciona perfectamente en móviles y desktop
 
-Ejecuta el script de configuración:
+## 🛠️ Tecnologías
 
-```bash
-cd "/Users/matiasarias/Desktop/Personal/Demos/Torneo de asados"
-./configurar-git-personal.sh
-```
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Lenguaje**: [TypeScript](https://www.typescriptlang.org/)
+- **Estilos**: [Tailwind CSS 3](https://tailwindcss.com/)
+- **Base de Datos**: [Vercel KV](https://vercel.com/storage/kv) (Redis)
+- **Deployment**: [Vercel](https://vercel.com/)
+- **Formularios**: React Hook Form + Zod
 
-### Configuración manual
+## 🚀 Desarrollo Local
 
-```bash
-cd "/Users/matiasarias/Desktop/Personal/Demos/Torneo de asados"
+### Requisitos
 
-# Configurar tus credenciales personales
-git config --local user.name "Tu Nombre Personal"
-git config --local user.email "tuemail@personal.com"
+- Node.js 18 o superior
+- npm 9 o superior
 
-# Cambiar rama a main (opcional)
-git branch -M main
-
-# Verificar configuración
-git config --local --list
-```
-
-## 📚 Documentación adicional
-
-- **CONFIGURAR_GIT.md**: Guía completa sobre cómo configurar SSH, tokens y autenticación
-- **configurar-git-personal.sh**: Script interactivo para configurar Git
-
-## 🚀 Conectar con GitHub
-
-### Crear el repositorio en GitHub
-
-1. Ve a [GitHub](https://github.com/new)
-2. Crea un nuevo repositorio llamado "torneo-de-asados" (o el nombre que prefieras)
-3. **NO** inicialices con README, .gitignore o licencia
-
-### Conectar este repositorio
-
-**Con SSH (recomendado):**
-```bash
-git remote add origin git@github.com-personal:tu-usuario/torneo-de-asados.git
-git branch -M main
-git add .
-git commit -m "Initial commit"
-git push -u origin main
-```
-
-**Con HTTPS:**
-```bash
-git remote add origin https://github.com/tu-usuario/torneo-de-asados.git
-git branch -M main
-git add .
-git commit -m "Initial commit"
-git push -u origin main
-```
-
-## ✅ Verificar que todo funciona
+### Instalación
 
 ```bash
-# Ver toda la configuración activa
-git config --list --show-origin | grep user
+# Clonar el repositorio
+git clone https://github.com/MatiasArias/torneo-asados-sdd.git
 
-# Hacer un commit de prueba
-git add README.md
-git commit -m "Test commit"
+# Instalar dependencias
+npm install
 
-# Verificar el autor del commit (debe ser tu email personal)
-git log -1 --pretty=format:"%an <%ae>"
+# Configurar variables de entorno
+cp .env.example .env.local
+# Edita .env.local con tus credenciales de Vercel KV
+
+# Ejecutar en modo desarrollo
+npm run dev
 ```
+
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000)
+
+### Scripts Disponibles
+
+```bash
+npm run dev      # Servidor de desarrollo
+npm run build    # Build de producción
+npm start        # Ejecutar build de producción
+npm run lint     # Linter
+```
+
+## 📁 Estructura del Proyecto
+
+```
+├── app/                    # App Router de Next.js
+│   ├── api/               # API Routes
+│   │   ├── asados/       # Endpoints de asados
+│   │   ├── users/        # Endpoints de usuarios
+│   │   └── penalties/    # Endpoints de penalizaciones
+│   ├── asados/           # Páginas de asados
+│   └── penalties/        # Páginas de penalizaciones
+├── components/            # Componentes React
+├── lib/                   # Utilidades y lógica de negocio
+│   ├── db.ts             # Acceso a base de datos
+│   ├── points.ts         # Cálculo de puntos
+│   ├── rankings.ts       # Sistema de rankings
+│   └── types.ts          # Tipos de TypeScript
+└── scripts/              # Scripts de utilidad
+```
+
+## 🗄️ Base de Datos
+
+La aplicación usa Vercel KV (Redis) para almacenar:
+- Usuarios y sus cumpleaños
+- Asados programados
+- Participaciones
+- Penalizaciones
+
+Para inicializar los datos:
+
+```bash
+# Ejecutar script de inicialización (una sola vez)
+npx tsx scripts/init-data.ts
+```
+
+## 📚 Documentación
+
+- [SPEC.md](./SPEC.md) - Especificación técnica completa
+- [STATUS.md](./STATUS.md) - Estado del proyecto y roadmap
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Guía de deployment
+
+## 🤝 Contribuir
+
+Este es un proyecto personal, pero las sugerencias son bienvenidas. 
+
+## 📄 Licencia
+
+Este proyecto es de uso personal.
 
 ---
 
-**Importante**: Esta configuración solo afecta a este repositorio. Tus credenciales de trabajo no se han modificado.
+Desarrollado con ❤️ y 🥩 por [Matias Arias](https://github.com/MatiasArias)
 

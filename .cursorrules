@@ -1,0 +1,48 @@
+# Cursor Rules - Torneo de Asados
+
+## Git y Control de Versiones
+
+### ⛔ NUNCA hacer commits ni push automáticamente
+- **NO ejecutar** `git commit`
+- **NO ejecutar** `git push`
+- **NO modificar** la configuración de Git (remotes, user.name, user.email, etc.)
+- **NO cambiar** URLs de remotes entre SSH/HTTPS
+
+**Razón:** Este es un proyecto personal desarrollado en una computadora de trabajo con configuración especial de credenciales SSH. El desarrollador maneja Git manualmente.
+
+### ✅ Permitido
+- Mostrar el estado de Git con `git status` o `git diff` si se solicita explícitamente
+- Sugerir comandos de Git para que el usuario los ejecute manualmente
+- Leer la configuración de Git de forma read-only si es necesario
+
+## Workflow recomendado
+
+Cuando termines cambios:
+1. Informar al usuario qué archivos fueron modificados
+2. Sugerir comandos de Git que el usuario puede ejecutar manualmente
+3. Ejemplo:
+   ```
+   Se modificaron los siguientes archivos:
+   - package.json
+   - app/globals.css
+   
+   Para hacer commit y push, puedes ejecutar:
+   git add -A
+   git commit -m "tu mensaje"
+   git push origin tu-branch
+   ```
+
+## Desarrollo
+
+### ✅ Permitido hacer automáticamente
+- Instalar dependencias con `npm install`
+- Ejecutar builds con `npm run build`
+- Ejecutar el servidor de desarrollo con `npm run dev`
+- Leer y modificar archivos del proyecto
+- Crear, editar y eliminar archivos de código
+
+### ℹ️ Notas
+- Este proyecto usa Next.js 15 con App Router
+- Las dependencias se gestionan con npm
+- El proyecto se despliega en Vercel
+
