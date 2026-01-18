@@ -2,6 +2,10 @@
 
 Web app para gestionar el torneo de asados entre amigos.
 
+**🌐 App en vivo:** [https://torneo-asados-sdd.vercel.app](https://torneo-asados-sdd.vercel.app/)
+
+---
+
 ## 🚀 Deployment en Vercel
 
 ### 1. Crear cuenta en Vercel
@@ -115,12 +119,9 @@ La app estará en `http://localhost:3000`
 
 ## 🎯 URL de la App
 
-Después del deployment, tu app estará en:
-```
-https://torneo-app-[tu-username].vercel.app
-```
+**App deployada:** https://torneo-asados-sdd.vercel.app/
 
-Comparte esta URL solo con los 8 amigos del torneo.
+Comparte esta URL solo con los amigos del torneo.
 
 ---
 
