@@ -1,0 +1,359 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { User, Participation } from '@/lib/types';
+
+interface AsadoFormProps {
+  users: User[];
+  initialData?: {
+    name: string;
+    date: string;
+    time: string;
+    location: string;
+    hostId: string;
+    notes: string;
+    participations: Participation[];
+  };
+  asadoId?: string;
+}
+
+export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Form state
+  const [name, setName] = useState(initialData?.name || '');
+  const [date, setDate] = useState(initialData?.date || '');
+  const [time, setTime] = useState(initialData?.time || '20:00');
+  const [location, setLocation] = useState(initialData?.location || '');
+  const [hostId, setHostId] = useState(initialData?.hostId || '');
+  const [notes, setNotes] = useState(initialData?.notes || '');
+  
+  // Participations state (one per user)
+  const [participations, setParticipations] = useState<Record<string, Partial<Participation>>>(
+    users.reduce((acc, user) => {
+      const existing = initialData?.participations.find(p => p.userId === user.id);
+      acc[user.id] = existing || {
+        userId: user.id,
+        asador: false,
+        calificacionAsado: undefined,
+        comprador: false,
+        asistio: false,
+        llegoATiempo: false,
+        llegoTarde: false,
+        hosteo: false,
+        carneEspecial: false,
+        compraDividida: false,
+      };
+      return acc;
+    }, {} as Record<string, Partial<Participation>>)
+  );
+  
+  const updateParticipation = (userId: string, field: keyof Participation, value: any) => {
+    setParticipations(prev => ({
+      ...prev,
+      [userId]: {
+        ...prev[userId],
+        [field]: value,
+      },
+    }));
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Validate
+      if (!name || !date || !hostId) {
+        setError('Por favor completa todos los campos obligatorios');
+        setLoading(false);
+        return;
+      }
+      
+      // Check asador has rating
+      const asadores = Object.values(participations).filter(p => p.asador);
+      for (const asador of asadores) {
+        if (!asador.calificacionAsado || asador.calificacionAsado < 1 || asador.calificacionAsado > 5) {
+          setError('Los asadores deben tener una calificación de 1 a 5');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      const asadoData = {
+        name,
+        date,
+        time,
+        location,
+        hostId,
+        notes,
+      };
+      
+      const participationsArray = Object.values(participations).filter(p => 
+        p.asistio || p.asador || p.comprador || p.hosteo
+      ) as Participation[];
+      
+      const url = asadoId ? `/api/asados/${asadoId}` : '/api/asados';
+      const method = asadoId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asado: asadoId ? { ...asadoData, id: asadoId } : asadoData,
+          participations: participationsArray,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al guardar el asado');
+      }
+      
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setLoading(false);
+    }
+  };
+  
+  const attendees = Object.values(participations).filter(p => p.asistio).length;
+  
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+      
+      {/* Basic Info */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-xl font-bold text-gray-900">Información del Asado</h2>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nombre *
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Ej: Asado de Juan"
+            required
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha *
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hora
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ubicación
+          </label>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Ej: Casa de Juan"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Anfitrión *
+          </label>
+          <select
+            value={hostId}
+            onChange={(e) => setHostId(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            required
+          >
+            <option value="">Selecciona...</option>
+            {users.map(user => (
+              <option key={user.id} value={user.id}>{user.name}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notas
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            rows={3}
+            placeholder="Notas o anécdotas del asado..."
+          />
+        </div>
+      </div>
+      
+      {/* Participants */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Participantes</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Asistentes: {attendees} {attendees < 4 && <span className="text-red-600 font-semibold">(⚠️ Mínimo 4 para sumar puntos)</span>}
+        </p>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-2 py-2 text-left font-medium text-gray-700">Nombre</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Asistió</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Asador</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">★ (1-5)</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">C. Esp.</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Compró</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">A tiempo</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Tarde</th>
+                <th className="px-2 py-2 text-center font-medium text-gray-700">Hosteó</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {users.map(user => {
+                const p = participations[user.id];
+                return (
+                  <tr key={user.id}>
+                    <td className="px-2 py-2 font-medium">{user.name}</td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.asistio || false}
+                        onChange={(e) => updateParticipation(user.id, 'asistio', e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.asador || false}
+                        onChange={(e) => updateParticipation(user.id, 'asador', e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={p.calificacionAsado || ''}
+                        onChange={(e) => updateParticipation(user.id, 'calificacionAsado', e.target.value ? parseInt(e.target.value) : undefined)}
+                        disabled={!p.asador}
+                        className="w-12 px-1 py-1 border rounded text-center disabled:bg-gray-100"
+                        placeholder="-"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.carneEspecial || false}
+                        onChange={(e) => updateParticipation(user.id, 'carneEspecial', e.target.checked)}
+                        disabled={!p.asador}
+                        className="w-4 h-4 disabled:opacity-30"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.comprador || false}
+                        onChange={(e) => updateParticipation(user.id, 'comprador', e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.llegoATiempo || false}
+                        onChange={(e) => {
+                          updateParticipation(user.id, 'llegoATiempo', e.target.checked);
+                          if (e.target.checked) updateParticipation(user.id, 'llegoTarde', false);
+                        }}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.llegoTarde || false}
+                        onChange={(e) => {
+                          updateParticipation(user.id, 'llegoTarde', e.target.checked);
+                          if (e.target.checked) updateParticipation(user.id, 'llegoATiempo', false);
+                        }}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={p.hosteo || false}
+                        onChange={(e) => updateParticipation(user.id, 'hosteo', e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        
+        <p className="text-xs text-gray-500 mt-4">
+          * C. Esp. = Carne Especial (bicho/costillar, solo disponible si es asador)
+        </p>
+      </div>
+      
+      {/* Actions */}
+      <div className="flex gap-4 justify-end">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          disabled={loading}
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? 'Guardando...' : asadoId ? 'Actualizar Asado' : 'Crear Asado'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
