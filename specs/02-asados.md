@@ -33,9 +33,9 @@ Core feature for creating, editing, and managing asado events. Each asado repres
 - ✅ List all asados
 
 ### Permissions
-- **Trust-based**: Anyone can create/edit/delete any asado
-- No confirmation needed for delete operations
-- No ownership validation
+- **Access Code Protected**: Creating and editing asados requires a validation code (20182024)
+- Code is requested via modal before saving
+- Trust-based after authentication
 
 ## Data Model
 
@@ -125,20 +125,28 @@ interface Asado {
 
 ## Business Rules
 
-1. **Time for Arrival**: Time field determines "on time" vs "late"
+1. **Access Code Validation**: 
+   - Before creating or editing an asado, user must enter access code
+   - Code modal appears automatically when attempting to save
+   - Code: 20182024
+   - Access is granted for single operation, then resets
+
+2. **Time for Arrival**: Time field determines "on time" vs "late"
    - On time: Within 10 minutes of time
    - Late: Between 10 minutes and 1 hour after time
    - No show: More than 1 hour after or didn't attend
 
-2. **Host Assignment**: Host must be one of the 8 users
+3. **Host Assignment**: Host must be one of the 8 users
 
-3. **Edit Anytime**: Past asados can be edited (trust-based)
+4. **Edit Anytime**: Past asados can be edited (after code validation)
 
-4. **Delete Cascade**: When asado is deleted:
+5. **Delete Cascade**: When asado is deleted:
    - Delete all participations for that asado
    - Keep penalties linked to asado but mark asado as deleted
 
-5. **Date Format**: Always store as YYYY-MM-DD for consistency
+6. **Date Format**: Always store as YYYY-MM-DD for consistency
+
+7. **Auto-fill Date**: When creating new asado, date defaults to today (editable)
 
 ## UI/UX
 
@@ -196,6 +204,24 @@ interface Asado {
 - `app/asados/nuevo/page.tsx` - Create asado page
 - `app/asados/[id]/page.tsx` - Edit asado page
 - `components/AsadoForm.tsx` - Asado form component
+- `components/AccessCodeModal.tsx` - Access code validation modal
+
+### Access Code Flow
+1. User fills asado form completely
+2. User clicks "Crear Asado" or "Actualizar Asado"
+3. System checks if access has been granted in this session
+4. If not granted, modal appears requesting code
+5. User enters code (20182024)
+6. If correct:
+   - Access granted
+   - Modal closes
+   - Form submits automatically
+   - Access resets after successful save
+7. If incorrect:
+   - Error message displayed
+   - Modal shakes animation
+   - Input clears
+   - User can retry or cancel
 
 ## Test Scenarios
 

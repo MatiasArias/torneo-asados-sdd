@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User, Participation } from '@/lib/types';
 import RatingModal from './RatingModal';
+import AccessCodeModal from './AccessCodeModal';
 
 interface AsadoFormProps {
   users: User[];
@@ -28,6 +29,10 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [currentAsadorIndex, setCurrentAsadorIndex] = useState(0);
   const [asadoresNeedingRating, setAsadoresNeedingRating] = useState<string[]>([]);
+  
+  // Access code modal state
+  const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
+  const [isAccessGranted, setIsAccessGranted] = useState(false);
   
   // Form state
   const [name, setName] = useState(initialData?.name || '');
@@ -95,6 +100,12 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
     e.preventDefault();
     setError('');
     
+    // Check access code first
+    if (!isAccessGranted) {
+      setShowAccessCodeModal(true);
+      return;
+    }
+    
     // Validate basic fields
     if (!name || !date || !hostId) {
       setError('Por favor completa todos los campos obligatorios');
@@ -122,6 +133,22 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
     
     // All ratings are complete, proceed to save
     await saveAsado();
+  };
+  
+  const handleAccessCodeSuccess = () => {
+    setShowAccessCodeModal(false);
+    setIsAccessGranted(true);
+    // Retry submit after granting access
+    setTimeout(() => {
+      const form = document.querySelector('form');
+      if (form) {
+        form.requestSubmit();
+      }
+    }, 100);
+  };
+  
+  const handleAccessCodeCancel = () => {
+    setShowAccessCodeModal(false);
   };
   
   const handleRatingSubmit = (rating: number) => {
@@ -199,6 +226,15 @@ export default function AsadoForm({ users, initialData, asadoId }: AsadoFormProp
   
   return (
     <>
+      {/* Access Code Modal */}
+      {showAccessCodeModal && (
+        <AccessCodeModal
+          actionName={asadoId ? 'actualizar el asado' : 'crear el asado'}
+          onSuccess={handleAccessCodeSuccess}
+          onCancel={handleAccessCodeCancel}
+        />
+      )}
+      
       {/* Rating Modal */}
       {showRatingModal && currentRatingUser && (
         <RatingModal
